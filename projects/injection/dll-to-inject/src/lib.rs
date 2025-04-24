@@ -24,9 +24,9 @@ where
     }
 }
 
-#[allow(non_snake_case)]
+#[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
-pub extern "system" fn DLLMain(
+pub unsafe extern "system" fn DllMain(
     _hmodule: HMODULE,
     ul_reason_for_call: u32,
     _lpReserved: *mut c_void,

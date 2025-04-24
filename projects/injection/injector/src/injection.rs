@@ -18,12 +18,12 @@ use windows::Win32::{
         },
     },
 };
-use windows_core::{Owned, PCSTR};
+use windows_core::PCSTR;
 
 use crate::process::get_process_id;
 
 pub struct Process {
-    handle: Owned<HANDLE>,
+    handle: HANDLE,
 }
 
 unsafe extern "system" fn load_library_a(parameter: *mut c_void) -> u32 {
@@ -51,7 +51,7 @@ impl<'a> OwnedVirtualAllocEx<'a> {
     ) -> windows_core::Result<Self> {
         let ptr = unsafe {
             VirtualAllocEx(
-                *process.handle,
+                process.handle,
                 None,
                 path.count_bytes() + 1,
                 flallocationtype,
@@ -66,7 +66,7 @@ impl<'a> OwnedVirtualAllocEx<'a> {
     ) -> windows_core::Result<()> {
         unsafe {
             WriteProcessMemory(
-                *self.process.handle,
+                self.process.handle,
                 self.ptr,
                 self.path.as_ptr() as _,
                 self.path.count_bytes() + 1,
@@ -81,7 +81,7 @@ impl Drop for OwnedVirtualAllocEx<'_> {
     fn drop(&mut self) {
         unsafe {
             let _ = VirtualFreeEx(
-                *self.process.handle,
+                self.process.handle,
                 self.ptr,
                 self.path.count_bytes() + 1,
                 MEM_RELEASE,
@@ -93,9 +93,7 @@ impl Drop for OwnedVirtualAllocEx<'_> {
 impl Process {
     pub fn open(pid: u32) -> crate::Result<Self> {
         let handle = unsafe { OpenProcess(PROCESS_ALL_ACCESS, false, pid) }?;
-        Ok(Self {
-            handle: unsafe { Owned::new(handle) },
-        })
+        Ok(Self { handle })
     }
     pub fn open_by_exe_name<T>(target: &T) -> crate::Result<Self>
     where
@@ -116,17 +114,18 @@ impl Process {
     {
         let dll_path = CString::new(
             dll.as_ref()
-                .canonicalize()?
+                //.canonicalize()?
                 .to_str()
                 .ok_or(crate::error::Error::OsStrToStdStr)?,
         )?;
+        dbg!(&dll_path);
         // let dll_path_pc_str = PCSTR::from_raw(dll_path.as_ptr() as _);
         unsafe {
             let virtual_alloc = self.virtual_alloc(&dll_path)?;
 
             virtual_alloc.write_process(None)?;
             let load_thread = CreateRemoteThread(
-                *self.handle,
+                self.handle,
                 None,
                 0,
                 Some(load_library_a),
