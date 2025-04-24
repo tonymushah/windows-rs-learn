@@ -9,3 +9,4 @@ resolver = "3"
 [workspace.dependencies]
 windows = { version = "0.61" }
 windows-core = "0.61"
+anyhow = "1"
