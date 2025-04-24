@@ -1,3 +1,4 @@
+pub mod debug_priv;
 pub mod error;
 pub mod injection;
 pub mod process;
