@@ -23,15 +23,16 @@ fn main() {
             );
             println!("{:?}", res);
         }
-{
-        let lptext = HSTRING::from(lptext);
-        let lpcaption = HSTRING::from(lpcaption);
-        let res = MessageBoxW(
-            None,
-            PCWSTR::from_raw(lptext.as_ptr()),
-            PCWSTR::from_raw(lpcaption.as_ptr()),
-            MB_OK,
-        );
-        println!("{:?}", res);}
+        {
+            let lptext = HSTRING::from(lptext);
+            let lpcaption = HSTRING::from(lpcaption);
+            let res = MessageBoxW(
+                None,
+                PCWSTR::from_raw(lptext.as_ptr()),
+                PCWSTR::from_raw(lpcaption.as_ptr()),
+                MB_OK,
+            );
+            println!("{:?}", res);
+        }
     };
 }
