@@ -32,7 +32,14 @@ where
     }
 }
 
-fn main() -> anyhow::Result<()> {
+fn run() -> anyhow::Result<()> {
     println!("notepad.exe [{}]", get_process_id("notepad.exe")?);
     Ok(())
+}
+
+fn main() {
+    if let Err(err) = run() {
+        eprintln!("{err}");
+        std::process::exit(1);
+    }
 }
