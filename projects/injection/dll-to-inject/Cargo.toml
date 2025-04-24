@@ -1,13 +1,15 @@
 [package]
-name = "windows-rs-learn"
+name = "dll-to-inject"
 version = "0.1.0"
 edition.workspace = true
+authors.workspace = true
+
+[lib]
+crate-type = ["cdylib"]
 
 [dependencies]
 windows = { workspace = true, features = [
     "Win32_Foundation",
-    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_UI_WindowsAndMessaging",
 ] }
 windows-core.workspace = true
-anyhow.workspace = true
-thiserror.workspace = true

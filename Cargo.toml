@@ -3,7 +3,7 @@ edition = "2024"
 authors = ["tonymushah tonymushahdev06@yahoo.com"]
 
 [workspace]
-members = ["./projects/start"]
+members = ["./projects/start", "projects/injection/dll-to-inject", "projects/injection/injector"]
 resolver = "3"
 
 [workspace.dependencies]
