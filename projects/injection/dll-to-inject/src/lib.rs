@@ -1,6 +1,7 @@
+mod run;
 pub mod utils;
 
-use std::{fmt::Write, fs::read_dir, os::raw::c_void, path::PathBuf};
+use std::os::raw::c_void;
 
 use utils::message_box;
 use windows::Win32::{
@@ -8,10 +9,6 @@ use windows::Win32::{
     System::SystemServices::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH},
 };
 use windows_core::BOOL;
-
-fn run() -> anyhow::Result<()> {
-    Ok(())
-}
 
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
@@ -23,7 +20,7 @@ pub unsafe extern "system" fn DllMain(
     match ul_reason_for_call {
         DLL_PROCESS_ATTACH => {
             message_box("Attached", "Your dll has been injected");
-            if let Err(err) = run() {
+            if let Err(err) = run::run(_hmodule) {
                 message_box("Cannot execute payload", &err.to_string());
             }
         }

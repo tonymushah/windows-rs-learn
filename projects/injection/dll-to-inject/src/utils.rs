@@ -1,3 +1,5 @@
+pub mod close_frame_window;
+
 use windows::Win32::UI::WindowsAndMessaging::{MB_ICONINFORMATION, MessageBoxW};
 use windows_core::{HSTRING, PCWSTR};
 

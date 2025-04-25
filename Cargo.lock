@@ -774,6 +774,9 @@ dependencies = [
  "anyhow",
  "eframe",
  "fern",
+ "log",
+ "raw-window-handle",
+ "thiserror 2.0.12",
  "windows 0.61.1",
  "windows-core 0.61.0",
 ]
