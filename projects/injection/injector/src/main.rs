@@ -1,4 +1,4 @@
-use std::{thread::sleep, time::Duration};
+//use std::{thread::sleep, time::Duration};
 
 use injector::{debug_priv::enable_debug_priv, injection::Process};
 
@@ -15,7 +15,7 @@ fn run() -> anyhow::Result<()> {
     println!("{target} / {dll_path}");
     let process = Process::open_by_exe_name(target.trim())?;
     process.inject_dll(dll_path.trim())?;
-    sleep(Duration::from_secs(40));
+    // sleep(Duration::from_secs(40));
     Ok(())
 }
 

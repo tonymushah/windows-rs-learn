@@ -17,3 +17,4 @@ windows = { workspace = true, features = [
 windows-core.workspace = true
 thiserror.workspace = true
 anyhow.workspace = true
+windows-link.workspace = true

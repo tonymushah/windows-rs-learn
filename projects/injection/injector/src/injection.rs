@@ -5,16 +5,17 @@ use std::{
 };
 
 use windows::Win32::{
-    Foundation::HANDLE,
+    Foundation::{HANDLE, HMODULE},
     System::{
         Diagnostics::Debug::WriteProcessMemory,
-        LibraryLoader::LoadLibraryA,
+        LibraryLoader::{GetModuleHandleA /*LoadLibraryA*/},
         Memory::{
             MEM_COMMIT, MEM_RELEASE, PAGE_PROTECTION_FLAGS, PAGE_READWRITE,
             VIRTUAL_ALLOCATION_TYPE, VirtualAllocEx, VirtualFreeEx,
         },
         Threading::{
-            CreateRemoteThread, INFINITE, OpenProcess, PROCESS_ALL_ACCESS, WaitForSingleObject,
+            CreateRemoteThread, INFINITE, /*LPFIBER_START_ROUTINE,*/ LPTHREAD_START_ROUTINE,
+            OpenProcess, PROCESS_ALL_ACCESS, WaitForSingleObject,
         },
     },
 };
@@ -26,10 +27,35 @@ pub struct Process {
     handle: HANDLE,
 }
 
+/*
 unsafe extern "system" fn load_library_a(parameter: *mut c_void) -> u32 {
-    match unsafe { LoadLibraryA(PCSTR(parameter as _)) } {
-        Ok(_mod) => 0,
-        Err(err) => err.code().0 as _,
+    if !parameter.is_null() {
+        match unsafe { LoadLibraryA(PCSTR(parameter as _)) } {
+            Ok(_mod) => {}
+            Err(_err) => {
+                // eprintln!("{err}");
+            }
+        };
+    } else {
+        // println!("Null");
+    }
+
+    1
+}
+*/
+
+unsafe fn get_load_library_a() -> crate::Result<LPTHREAD_START_ROUTINE> {
+    windows_link::link!("kernel32.dll" "system" fn GetProcAddress(hmodule : HMODULE, lpprocname : windows_core::PCSTR) -> LPTHREAD_START_ROUTINE);
+
+    let kernel_32_str = CString::new("Kernel32.dll")?;
+    let kernel_32_pcstr = PCSTR::from_raw(kernel_32_str.as_ptr() as _);
+
+    let load_lib_a_str = CString::new("LoadLibraryA")?;
+    let load_lib_a_pcstr = PCSTR::from_raw(load_lib_a_str.as_ptr() as _);
+    unsafe {
+        let kernel_32 = GetModuleHandleA(kernel_32_pcstr)?;
+
+        Ok(GetProcAddress(kernel_32, load_lib_a_pcstr))
     }
 }
 
@@ -124,11 +150,13 @@ impl Process {
             let virtual_alloc = self.virtual_alloc(&dll_path)?;
 
             virtual_alloc.write_process(None)?;
+
+            // GetProcAddress(hmodule, lpprocname)
             let load_thread = CreateRemoteThread(
                 self.handle,
                 None,
                 0,
-                Some(load_library_a),
+                /*Some(load_library_a)*/ get_load_library_a()?,
                 Some(virtual_alloc.ptr),
                 0,
                 None,
