@@ -1,4 +1,4 @@
-use std::os::raw::c_void;
+use std::{fmt::Write, fs::read_dir, os::raw::c_void, path::PathBuf};
 
 use windows::Win32::{
     Foundation::HMODULE,
@@ -24,6 +24,24 @@ where
     }
 }
 
+fn run() -> anyhow::Result<()> {
+    let path = PathBuf::from(".");
+    let d = read_dir(path.canonicalize()?)?;
+    let entrys = d
+        .flatten()
+        .flat_map(|d| d.path().to_str().map(String::from))
+        .collect::<Vec<_>>();
+
+    let mut buf = String::new();
+    for entry in &entrys {
+        let _ = writeln!(&mut buf, "{entry}");
+    }
+
+    message_box(&format!("Found {} entries:", entrys.len()), &buf);
+
+    Ok(())
+}
+
 #[allow(non_snake_case, clippy::missing_safety_doc)]
 #[unsafe(no_mangle)]
 pub unsafe extern "system" fn DllMain(
@@ -32,7 +50,12 @@ pub unsafe extern "system" fn DllMain(
     _lpReserved: *mut c_void,
 ) -> BOOL {
     match ul_reason_for_call {
-        DLL_PROCESS_ATTACH => message_box("Attached", "Your dll has been injected"),
+        DLL_PROCESS_ATTACH => {
+            message_box("Attached", "Your dll has been injected");
+            if let Err(err) = run() {
+                message_box("Cannot execute payload", &err.to_string());
+            }
+        }
         DLL_PROCESS_DETACH => message_box("Dettached", "Dettached dll"),
         _ => {}
     }
