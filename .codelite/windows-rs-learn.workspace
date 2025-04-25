@@ -1,0 +1,23 @@
+{
+	"selected_config":	"Debug",
+	"configs":	[{
+			"name":	"Debug",
+			"flags":	0,
+			"compile_flags":	[],
+			"executable":	"D:\\Tony Folder\\dev\\windows-rs-learn\\target\\debug\\.exe",
+			"arguments":	"",
+			"environment":	"RUST_GDB=gdb\n",
+			"compiler":	"rustc",
+			"remoteFolder":	"",
+			"remoteAccount":	"",
+			"workingDirectory":	"",
+			"debuggerPath":	"C:\\Users\\Gaming\\AppData\\Roaming\\codelite\\rust-gdb.bat",
+			"debuggerCommands":	"python\nimport sys\nsys.path.insert(0, 'C:/Users/Gaming/AppData/Roaming/codelite/gdb_printers/rustlib/etc')\nimport gdb_load_rust_pretty_printers\nend",
+			"debuggerRemoteEnabled":	false,
+			"debuggerRemoteExtended":	true,
+			"debuggerRemoteHost":	"localhost",
+			"debuggerRemotePort":	"2345",
+			"debuggerRemoteCommands":	"",
+			"last_executables":	[]
+		}]
+}

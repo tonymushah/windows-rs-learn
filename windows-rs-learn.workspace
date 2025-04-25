@@ -1,0 +1,12 @@
+{
+	"workspace_type":	"File System Workspace",
+	"name":	"windows-rs-learn",
+	"configs":	[{
+			"name":	"Debug",
+			"targets":	[["build", "D:\\.cargo\\bin\\cargo.exe build --color always"], ["clean", "D:\\.cargo\\bin\\cargo.exe clean --color always"], ["clippy", "D:\\.cargo\\bin\\cargo.exe clippy --color always --all-features --all-targets -- -D warnings"], ["tests", "D:\\.cargo\\bin\\cargo.exe test --color always"]],
+			"file_extensions":	"*.cpp;*.c;*.txt;*.json;*.hpp;*.cc;*.cxx;*.xml;*.h;*.wxcp;*.py;*.php;*.rb;*.html;*.js;*.ts;*.rs;*.iss;*.md;*.bat;*.sh;*.cmake;*.rs;*.toml",
+			"excludeFilesPattern":	"*.o;*.pyc;*.obj;*.workspace;*.o.d;*.exe;*.dll;*.project",
+			"excludePaths":	"",
+			"debugger":	"GNU gdb debugger"
+		}]
+}

@@ -15,3 +15,5 @@ windows = { workspace = true, features = [
 ] }
 windows-core.workspace = true
 anyhow.workspace = true
+eframe.workspace = true
+fern.workspace = true
