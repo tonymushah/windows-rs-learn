@@ -11,7 +11,8 @@ crate-type = ["cdylib"]
 windows = { workspace = true, features = [
     "Win32_Foundation",
     "Win32_UI_WindowsAndMessaging",
-    "Win32_System_SystemServices"
+    "Win32_System_SystemServices",
+    "Win32_System_Threading"
 ] }
 windows-core.workspace = true
 anyhow.workspace = true
