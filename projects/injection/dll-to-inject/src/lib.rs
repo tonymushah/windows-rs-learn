@@ -1,7 +1,7 @@
 mod run;
 pub mod utils;
 
-use std::{os::raw::c_void, sync::RwLock};
+use std::{os::raw::c_void, panic, sync::RwLock};
 
 use utils::message_box;
 use windows::Win32::{
@@ -9,7 +9,8 @@ use windows::Win32::{
     System::{
         SystemServices::{DLL_PROCESS_ATTACH, DLL_PROCESS_DETACH},
         Threading::{
-            CreateThreadpoolWork, PTP_CALLBACK_INSTANCE, PTP_WORK, WaitForThreadpoolWorkCallbacks,
+            /*CreateThread,*/ CreateThreadpoolWork, PTP_CALLBACK_INSTANCE, PTP_WORK,
+            SubmitThreadpoolWork, WaitForThreadpoolWorkCallbacks,
         },
     },
 };
@@ -32,12 +33,25 @@ pub unsafe extern "system" fn DllMain(
 ) -> BOOL {
     match ul_reason_for_call {
         DLL_PROCESS_ATTACH => {
+            panic::set_hook(Box::new(|d| {
+                message_box("Panic!", {
+                    if let Some(d) = d.payload().downcast_ref::<String>() {
+                        d.as_str()
+                    } else if let Some(d) = d.payload().downcast_ref::<&'static str>() {
+                        d
+                    } else {
+                        "..."
+                    }
+                });
+            }));
             message_box("Attached", "Your dll has been injected");
             WORK.clear_poison();
             let mut write_work = WORK.write().unwrap();
+            // CreateThread(lpthreadattributes, dwstacksize, lpstartaddress, lpparameter, dwcreationflags, lpthreadid)
             if write_work.is_none() {
                 match unsafe { CreateThreadpoolWork(Some(run_work), Some(_hmodule.0), None) } {
                     Ok(work) => {
+                        unsafe { SubmitThreadpoolWork(work) };
                         write_work.replace(work);
                     }
                     Err(err) => {

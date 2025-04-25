@@ -25,7 +25,16 @@ impl App for EframeApp {
 }
 
 pub fn run(_hmodule: HMODULE) -> anyhow::Result<()> {
-    let native_options = eframe::NativeOptions::default();
+    let native_options = eframe::NativeOptions {
+        event_loop_builder: Some(Box::new(|_ctx| {
+            #[cfg(target_os = "windows")]
+            {
+                use winit::platform::windows::EventLoopBuilderExtWindows;
+                _ctx.with_any_thread(true);
+            }
+        })),
+        ..Default::default()
+    };
     eframe::run_native(
         "Injected DLL",
         native_options,
