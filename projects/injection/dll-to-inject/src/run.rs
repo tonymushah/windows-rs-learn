@@ -1,7 +1,7 @@
 use eframe::{App, AppCreator, egui};
 use windows::Win32::Foundation::HMODULE;
 
-use crate::utils::close_frame_window::close_frame_window;
+// use crate::utils::close_frame_window::close_frame_window;
 
 #[derive(Debug, Default)]
 struct EframeApp {}
@@ -12,14 +12,9 @@ impl EframeApp {
     }
 }
 impl App for EframeApp {
-    fn update(&mut self, ctx: &eframe::egui::Context, frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Injected DLL");
-            if ui.button("Close").clicked() {
-                if let Err(err) = close_frame_window(frame) {
-                    log::error!("{err}");
-                }
-            }
         });
     }
 }
@@ -33,7 +28,7 @@ pub fn run(_hmodule: HMODULE) -> anyhow::Result<()> {
                 _ctx.with_any_thread(true);
             }
         })),
-        run_and_return: false,
+        run_and_return: true,
         ..Default::default()
     };
     eframe::run_native(
