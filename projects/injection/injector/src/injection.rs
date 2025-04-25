@@ -164,7 +164,7 @@ impl Process {
 
             let _ = WaitForSingleObject(load_thread, INFINITE);
 
-            println!("Dll allocated at : {}", virtual_alloc.ptr.addr());
+            println!("Dll allocated at : {:p}", virtual_alloc.ptr);
         }
         Ok(())
     }
