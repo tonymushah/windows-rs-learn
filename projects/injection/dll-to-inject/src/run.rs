@@ -33,6 +33,7 @@ pub fn run(_hmodule: HMODULE) -> anyhow::Result<()> {
                 _ctx.with_any_thread(true);
             }
         })),
+        run_and_return: false,
         ..Default::default()
     };
     eframe::run_native(
