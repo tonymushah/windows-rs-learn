@@ -6,6 +6,7 @@ use windows::Win32::{
         SubmitThreadpoolWork, WaitForThreadpoolWorkCallbacks,
     },
 };
+// use windows_core::Owned;
 
 use std::{os::raw::c_void, sync::RwLock};
 
@@ -20,11 +21,14 @@ pub fn wait_for_work(cancel: bool) {
 }
 
 extern "system" fn run_work(_pfnwk: PTP_CALLBACK_INSTANCE, _ctx: *mut c_void, _work: PTP_WORK) {
+    // let _work = unsafe { Owned::new(_work) };
     if let Err(err) = crate::run::run(HMODULE(_ctx)) {
         message_box("Cannot execute payload", &err.to_string());
     }
     WORK.clear_poison();
     WORK.write().unwrap().take();
+    //Idk why the window just froze when this message box is not here.
+    message_box("Killing work", "The eframe window is now closed");
 }
 
 pub fn init_work(_hmodule: HMODULE) {
