@@ -4,6 +4,8 @@ use dis_log::log_widget;
 use eframe::{App, AppCreator, egui};
 use windows::Win32::Foundation::HMODULE;
 
+use crate::logger::setup_log;
+
 // use crate::utils::close_frame_window::close_frame_window;
 
 #[derive(Debug, Default)]
@@ -24,6 +26,7 @@ impl App for EframeApp {
 }
 
 pub fn run(_hmodule: HMODULE) -> anyhow::Result<()> {
+    setup_log()?;
     let native_options = eframe::NativeOptions {
         event_loop_builder: Some(Box::new(|_ctx| {
             #[cfg(target_os = "windows")]

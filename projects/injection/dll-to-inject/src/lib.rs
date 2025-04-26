@@ -1,3 +1,4 @@
+pub mod logger;
 mod main_work;
 pub mod run;
 pub mod utils;
