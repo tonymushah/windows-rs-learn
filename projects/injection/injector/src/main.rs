@@ -1,5 +1,7 @@
 //use std::{thread::sleep, time::Duration};
 
+use std::process::Command;
+
 use injector::{debug_priv::enable_debug_priv, injection::Process};
 
 fn run() -> anyhow::Result<()> {
@@ -13,9 +15,11 @@ fn run() -> anyhow::Result<()> {
         .next()
         .ok_or(anyhow::anyhow!("cannot find dll path"))?;
     println!("{target} / {dll_path}");
-    let process = Process::open_by_exe_name(target.trim())?;
+    let mut sp_proc = Command::new(target).spawn()?;
+
+    let process = Process::open(sp_proc.id())?;
     process.inject_dll(dll_path.trim())?;
-    // sleep(Duration::from_secs(40));
+    sp_proc.wait()?;
     Ok(())
 }
 
