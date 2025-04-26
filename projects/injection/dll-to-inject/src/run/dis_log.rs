@@ -1,6 +1,6 @@
 use std::{collections::VecDeque, sync::LazyLock, time::SystemTime};
 
-use eframe::egui::{self, Ui, mutex::RwLock};
+use eframe::egui::{self, Context, mutex::RwLock};
 use fern::Output;
 
 const MAXIMUM_CAPACITY: usize = 200;
@@ -24,11 +24,14 @@ pub fn output() -> Output {
     })
 }
 
-pub(super) fn log_widget(ui: &mut Ui) {
-    egui::Window::new("Fern Logging").show(ui.ctx(), |ui| {
-        let read = LOG_DATA.read();
-        for entry in read.iter() {
-            ui.label(entry);
-        }
-    });
+pub(super) fn log_widget(ctx: &Context) {
+    egui::Window::new("Fern Logging")
+        .vscroll(true)
+        .max_height(500.0)
+        .show(ctx, |ui| {
+            let read = LOG_DATA.read();
+            for entry in read.iter() {
+                ui.label(entry);
+            }
+        });
 }
