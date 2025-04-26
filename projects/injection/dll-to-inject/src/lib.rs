@@ -1,5 +1,5 @@
 mod main_work;
-mod run;
+pub mod run;
 pub mod utils;
 
 use std::{os::raw::c_void, panic};

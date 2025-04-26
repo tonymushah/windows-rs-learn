@@ -1,3 +1,6 @@
+pub mod dis_log;
+
+use dis_log::log_widget;
 use eframe::{App, AppCreator, egui};
 use windows::Win32::Foundation::HMODULE;
 
@@ -15,6 +18,7 @@ impl App for EframeApp {
     fn update(&mut self, ctx: &eframe::egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.heading("Injected DLL");
+            log_widget(ui);
         });
     }
 }
