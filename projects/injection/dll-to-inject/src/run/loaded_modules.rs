@@ -1,6 +1,9 @@
 use std::{
     fmt::Debug,
-    sync::{Arc, /*LazyLock,*/ Weak},
+    sync::{
+        Arc, Weak,
+        mpsc::{Receiver, SyncSender, sync_channel},
+    },
 };
 
 use eframe::egui::{Widget, mutex::RwLock};
@@ -12,9 +15,15 @@ use windows_core::Owned;
 
 use crate::utils::get_loaded_module::{ModuleEntry, modules};
 
+struct LoadedModuleThreadContext {
+    modules: RwLock<Vec<ModuleEntry>>,
+    waker: Receiver<()>,
+}
+
 pub struct LoadedModules {
     work: Owned<PTP_WORK>,
-    modules: Arc<RwLock<Vec<ModuleEntry>>>,
+    thread_context: Arc<LoadedModuleThreadContext>,
+    waker: SyncSender<()>,
 }
 
 impl Debug for LoadedModules {
@@ -37,17 +46,19 @@ extern "system" fn load_module_work(
     let weak = if _context.is_null() {
         Weak::new()
     } else {
-        unsafe { Weak::from_raw(_context.cast::<RwLock<Vec<ModuleEntry>>>()) }
+        unsafe { Weak::from_raw(_context.cast::<LoadedModuleThreadContext>()) }
     };
-    match modules(Some(unsafe { GetCurrentProcessId() })) {
-        Ok(mods) => {
-            // *MODULES.write() = mods;
-            if let Some(modules) = weak.upgrade() {
-                *modules.write() = mods;
+    if let Some(context) = weak.upgrade() {
+        for _ in context.waker.iter() {
+            match modules(Some(unsafe { GetCurrentProcessId() })) {
+                Ok(mods) => {
+                    // *MODULES.write() = mods;
+                    *context.modules.write() = mods;
+                }
+                Err(err) => {
+                    log::error!("{err}");
+                }
             }
-        }
-        Err(err) => {
-            log::error!("{err}");
         }
     }
 }
@@ -55,12 +66,16 @@ extern "system" fn load_module_work(
 impl Default for LoadedModules {
     #[allow(clippy::arc_with_non_send_sync)]
     fn default() -> Self {
-        let modules = Arc::new(RwLock::new(Vec::<ModuleEntry>::new()));
+        let (tx, rx) = sync_channel(1);
+        let thread_context = Arc::new(LoadedModuleThreadContext {
+            modules: RwLock::new(Vec::<ModuleEntry>::new()),
+            waker: rx,
+        });
         let work = {
             unsafe {
                 match CreateThreadpoolWork(
                     Some(load_module_work),
-                    Some(Arc::downgrade(&modules).into_raw() as _),
+                    Some(Arc::downgrade(&thread_context).into_raw() as _),
                     None,
                 ) {
                     Ok(w) => w,
@@ -71,20 +86,22 @@ impl Default for LoadedModules {
                 }
             }
         };
+        unsafe {
+            SubmitThreadpoolWork(work);
+        }
         Self {
             work: unsafe { Owned::new(work) },
-            modules,
+            thread_context,
+            waker: tx,
         }
     }
 }
 
 impl Widget for &mut LoadedModules {
     fn ui(self, ui: &mut eframe::egui::Ui) -> eframe::egui::Response {
-        unsafe {
-            SubmitThreadpoolWork(*self.work);
-        }
+        let _ = self.waker.send(());
         ui.scope(|ui| {
-            for entry in self.modules.read().iter() {
+            for entry in self.thread_context.modules.read().iter() {
                 ui.label(format!("{} [{}]", entry.name, entry.path));
             }
         })
