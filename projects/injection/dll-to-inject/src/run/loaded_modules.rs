@@ -1,4 +1,7 @@
-use std::{fmt::Debug, os::raw::c_void, sync::LazyLock};
+use std::{
+    fmt::Debug,
+    sync::{Arc, /*LazyLock,*/ Weak},
+};
 
 use eframe::egui::{Widget, mutex::RwLock};
 use windows::Win32::System::Threading::{
@@ -11,6 +14,7 @@ use crate::utils::get_loaded_module::{ModuleEntry, modules};
 
 pub struct LoadedModules {
     work: Owned<PTP_WORK>,
+    modules: Arc<RwLock<Vec<ModuleEntry>>>,
 }
 
 impl Debug for LoadedModules {
@@ -21,20 +25,26 @@ impl Debug for LoadedModules {
     }
 }
 
-static MODULES: LazyLock<RwLock<Vec<ModuleEntry>>> =
-    LazyLock::new(|| RwLock::<Vec<ModuleEntry>>::new(Vec::new()));
+/*static MODULES: LazyLock<RwLock<Vec<ModuleEntry>>> =
+LazyLock::new(|| RwLock::<Vec<ModuleEntry>>::new(Vec::new()));
+*/
 
 extern "system" fn load_module_work(
     _instance: PTP_CALLBACK_INSTANCE,
     _context: *mut core::ffi::c_void,
     _work: PTP_WORK,
 ) {
-    if _context == (&raw const MODULES as *mut c_void) {
-        log::info!("Same!");
-    }
+    let weak = if _context.is_null() {
+        Weak::new()
+    } else {
+        unsafe { Weak::from_raw(_context.cast::<RwLock<Vec<ModuleEntry>>>()) }
+    };
     match modules(Some(unsafe { GetCurrentProcessId() })) {
         Ok(mods) => {
-            *MODULES.write() = mods;
+            // *MODULES.write() = mods;
+            if let Some(modules) = weak.upgrade() {
+                *modules.write() = mods;
+            }
         }
         Err(err) => {
             log::error!("{err}");
@@ -44,11 +54,12 @@ extern "system" fn load_module_work(
 
 impl Default for LoadedModules {
     fn default() -> Self {
+        let modules = Arc::new(RwLock::new(Vec::<ModuleEntry>::new()));
         let work = {
             unsafe {
                 match CreateThreadpoolWork(
                     Some(load_module_work),
-                    Some(&raw const MODULES as _),
+                    Some(Arc::downgrade(&modules).into_raw() as _),
                     None,
                 ) {
                     Ok(w) => w,
@@ -61,6 +72,7 @@ impl Default for LoadedModules {
         };
         Self {
             work: unsafe { Owned::new(work) },
+            modules,
         }
     }
 }
@@ -71,7 +83,7 @@ impl Widget for &mut LoadedModules {
             SubmitThreadpoolWork(*self.work);
         }
         ui.scope(|ui| {
-            for entry in MODULES.read().iter() {
+            for entry in self.modules.read().iter() {
                 ui.label(format!("{} [{}]", entry.name, entry.path));
             }
         })
