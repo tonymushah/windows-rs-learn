@@ -1,14 +1,10 @@
-use windows::Win32::{
-    Foundation::HMODULE,
-    System::Diagnostics::ToolHelp::{
-        CreateToolhelp32Snapshot, MODULEENTRY32W, Module32FirstW, Module32NextW, TH32CS_SNAPMODULE,
-    },
+use windows::Win32::System::Diagnostics::ToolHelp::{
+    CreateToolhelp32Snapshot, MODULEENTRY32W, Module32FirstW, Module32NextW, TH32CS_SNAPMODULE,
 };
 use windows_core::{HSTRING, Owned};
 
 #[derive(Debug, Clone)]
 pub struct ModuleEntry {
-    pub handle: HMODULE,
     pub name: String,
     pub path: String,
 }
@@ -29,7 +25,6 @@ pub fn modules(process_id: Option<u32>) -> windows_core::Result<Vec<ModuleEntry>
         Module32FirstW(*dbg_handle, &mut module32)?;
         while Module32NextW(*dbg_handle, &mut module32).is_ok() {
             entries.push(ModuleEntry {
-                handle: module32.hModule,
                 name: HSTRING::from_wide(&module32.szModule).to_string(),
                 path: HSTRING::from_wide(&module32.szModule).to_string(),
             });
