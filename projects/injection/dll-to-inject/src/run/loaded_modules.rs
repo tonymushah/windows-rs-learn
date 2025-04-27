@@ -53,6 +53,7 @@ extern "system" fn load_module_work(
 }
 
 impl Default for LoadedModules {
+    #[allow(clippy::arc_with_non_send_sync)]
     fn default() -> Self {
         let modules = Arc::new(RwLock::new(Vec::<ModuleEntry>::new()));
         let work = {
