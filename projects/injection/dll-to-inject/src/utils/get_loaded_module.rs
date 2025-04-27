@@ -31,7 +31,7 @@ pub fn modules(process_id: Option<u32>) -> windows_core::Result<Vec<ModuleEntry>
             entries.push(ModuleEntry {
                 handle: module32.hModule,
                 name: HSTRING::from_wide(&module32.szModule).to_string(),
-                path: HSTRING::from_wide(&module32.szModule).to_string(),
+                path: HSTRING::from_wide(&module32.szExePath).to_string(),
             });
         }
     }
