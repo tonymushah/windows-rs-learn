@@ -1,7 +1,10 @@
 pub mod dis_log;
 
 use dis_log::log_widget;
-use eframe::{App, AppCreator, egui};
+use eframe::{
+    App, AppCreator,
+    egui::{self},
+};
 use windows::Win32::Foundation::HMODULE;
 
 use crate::logger::setup_log;
