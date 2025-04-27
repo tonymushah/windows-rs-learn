@@ -20,16 +20,37 @@ struct LoadedModuleThreadContext {
     waker: Receiver<()>,
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+#[allow(dead_code)]
+enum SortLabel {
+    #[default]
+    None,
+    Name,
+    Path,
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, PartialOrd, Ord)]
+enum SortDirection {
+    #[default]
+    Asc,
+    Desc,
+}
+
 pub struct LoadedModules {
     work: Owned<PTP_WORK>,
     thread_context: Arc<LoadedModuleThreadContext>,
     waker: SyncSender<()>,
+    sort_label: SortLabel,
+    sort_direction: SortDirection,
 }
 
 impl Debug for LoadedModules {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("LoadedModules")
             .field("work", &self.work)
+            .field("sort_label", &self.sort_label)
+            .field("sort_direction", &self.sort_direction)
             .finish()
     }
 }
@@ -93,6 +114,8 @@ impl Default for LoadedModules {
             work: unsafe { Owned::new(work) },
             thread_context,
             waker: tx,
+            sort_direction: Default::default(),
+            sort_label: Default::default(),
         }
     }
 }
@@ -101,6 +124,66 @@ impl Widget for &mut LoadedModules {
     fn ui(self, ui: &mut eframe::egui::Ui) -> eframe::egui::Response {
         let _ = self.waker.send(());
         ui.scope(|ui| {
+            ui.horizontal(|ui| {
+                ui.label("Sort label:");
+                ui.add_space(5.0);
+                if ui
+                    .selectable_value(&mut self.sort_label, SortLabel::None, "None")
+                    .clicked()
+                {
+                    self.sort_label = SortLabel::None;
+                }
+                ui.add_space(2.0);
+                if ui
+                    .selectable_value(&mut self.sort_label, SortLabel::Name, "Name")
+                    .clicked()
+                {
+                    self.sort_label = SortLabel::Name;
+                }
+                ui.add_space(2.0);
+                if ui
+                    .selectable_value(&mut self.sort_label, SortLabel::Path, "Path")
+                    .clicked()
+                {
+                    self.sort_label = SortLabel::Path;
+                }
+            });
+            ui.horizontal(|ui| {
+                ui.label("Sort direction:");
+                ui.add_space(5.0);
+                if ui
+                    .selectable_value(&mut self.sort_direction, SortDirection::Asc, "Asc")
+                    .clicked()
+                {
+                    self.sort_direction = SortDirection::Asc;
+                }
+                ui.add_space(2.0);
+                if ui
+                    .selectable_value(&mut self.sort_direction, SortDirection::Desc, "Desc")
+                    .clicked()
+                {
+                    self.sort_direction = SortDirection::Desc;
+                }
+            });
+            {
+                let mut write = self.thread_context.modules.write();
+                match self.sort_label {
+                    SortLabel::Name => {
+                        write.sort_by_cached_key(|d| d.name.clone());
+                        if SortDirection::Desc == self.sort_direction {
+                            write.reverse();
+                        }
+                    }
+                    SortLabel::Path => {
+                        write.sort_by_cached_key(|d| d.path.clone());
+                        if SortDirection::Desc == self.sort_direction {
+                            write.reverse();
+                        }
+                    }
+                    _ => {}
+                }
+            }
+
             for entry in self.thread_context.modules.read().iter() {
                 ui.label(format!("{} [{}]", entry.name, entry.path));
             }
