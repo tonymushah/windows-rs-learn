@@ -1,10 +1,12 @@
 pub mod dis_log;
+pub mod loaded_modules;
 
 use dis_log::log_widget;
 use eframe::{
     App, AppCreator,
     egui::{self},
 };
+use loaded_modules::LoadedModules;
 use windows::Win32::Foundation::HMODULE;
 
 use crate::logger::setup_log;
@@ -12,7 +14,9 @@ use crate::logger::setup_log;
 // use crate::utils::close_frame_window::close_frame_window;
 
 #[derive(Debug, Default)]
-struct EframeApp {}
+struct EframeApp {
+    modules: LoadedModules,
+}
 
 impl EframeApp {
     fn app_creator_default<'a>() -> AppCreator<'a> {
@@ -25,6 +29,9 @@ impl App for EframeApp {
             ui.heading("Injected DLL");
         });
         log_widget(ctx);
+        egui::Window::new("Modules").vscroll(true).show(ctx, |ui| {
+            ui.add(&mut self.modules);
+        });
     }
 }
 
