@@ -27,12 +27,15 @@ pub fn modules(process_id: Option<u32>) -> windows_core::Result<Vec<ModuleEntry>
     };
     unsafe {
         Module32FirstW(*dbg_handle, &mut module32)?;
-        while Module32NextW(*dbg_handle, &mut module32).is_ok() {
+        loop {
             entries.push(ModuleEntry {
                 handle: module32.hModule,
                 name: HSTRING::from_wide(&module32.szModule).to_string(),
                 path: HSTRING::from_wide(&module32.szExePath).to_string(),
             });
+            if Module32NextW(*dbg_handle, &mut module32).is_err() {
+                break;
+            }
         }
     }
     Ok(entries)
