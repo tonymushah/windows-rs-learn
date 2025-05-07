@@ -1,4 +1,5 @@
 pub mod dis_log;
+pub mod heaps;
 pub mod loaded_modules;
 
 use dis_log::log_widget;
@@ -6,6 +7,7 @@ use eframe::{
     App, AppCreator,
     egui::{self},
 };
+use heaps::HeapsWidget;
 use loaded_modules::LoadedModules;
 use windows::Win32::Foundation::HMODULE;
 
@@ -16,6 +18,7 @@ use crate::logger::setup_log;
 #[derive(Debug, Default)]
 struct EframeApp {
     modules: LoadedModules,
+    heaps: HeapsWidget,
 }
 
 impl EframeApp {
@@ -31,6 +34,9 @@ impl App for EframeApp {
         log_widget(ctx);
         egui::Window::new("Modules").vscroll(true).show(ctx, |ui| {
             ui.add(&mut self.modules);
+        });
+        egui::Window::new("Heaps").vscroll(true).show(ctx, |ui| {
+            ui.add(&mut self.heaps);
         });
     }
 }
