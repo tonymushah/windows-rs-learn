@@ -1,4 +1,5 @@
 pub mod close_frame_window;
+pub mod get_heap_blocks;
 pub mod get_loaded_module;
 
 use windows::Win32::UI::WindowsAndMessaging::{MB_ICONINFORMATION, MessageBoxW};
