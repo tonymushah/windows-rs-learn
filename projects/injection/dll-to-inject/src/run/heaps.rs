@@ -3,26 +3,29 @@ use std::{
     fmt::Debug,
     sync::{
         Arc, Weak,
-        mpsc::{Receiver, SyncSender, sync_channel},
+        mpsc::{Receiver, sync_channel},
     },
+    thread::{JoinHandle, sleep, spawn},
+    time::Duration,
 };
 
-use eframe::egui::{Color32, Grid, RichText, Widget, mutex::RwLock};
+use eframe::egui::{Color32, RichText, Widget, mutex::RwLock};
 use windows::Win32::System::{
     Diagnostics::ToolHelp::{LF32_FIXED, LF32_FREE, LF32_MOVEABLE},
-    Threading::{
-        CreateThreadpoolWork, GetCurrentProcessId, PTP_CALLBACK_INSTANCE, PTP_WORK,
-        SubmitThreadpoolWork,
-    },
+    Threading::{CreateThreadpoolWork, PTP_CALLBACK_INSTANCE, PTP_WORK, SubmitThreadpoolWork},
 };
 use windows_core::Owned;
 
-use crate::utils::get_heap_blocks::{HeapEntry, get_heap_entries};
+use crate::utils::get_heap_blocks::{
+    HeapEntry,
+    //get_current_process_heaps,
+    get_heap_entries,
+};
 
 pub struct HeapsWidget {
     work: Owned<PTP_WORK>,
     work_context: Arc<HeapsWidgetWorkContext>,
-    waker: SyncSender<()>,
+    waker: JoinHandle<()>,
 }
 
 impl Debug for HeapsWidget {
@@ -52,7 +55,7 @@ extern "system" fn update_heap_work(
     };
     if let Some(context) = weak.upgrade() {
         for _ in context.waker.iter() {
-            match get_heap_entries(Some(unsafe { GetCurrentProcessId() })) {
+            match get_heap_entries(None) {
                 Ok(heaps) => {
                     *context.heaps.write() = heaps;
                 }
@@ -72,6 +75,14 @@ impl Default for HeapsWidget {
             heaps: RwLock::new(Vec::new()),
             waker: rx,
         });
+
+        let clock = spawn(move || {
+            loop {
+                let _ = tx.send(());
+                sleep(Duration::from_secs(1));
+            }
+        });
+
         let work = unsafe {
             match CreateThreadpoolWork(
                 Some(update_heap_work),
@@ -91,22 +102,19 @@ impl Default for HeapsWidget {
         Self {
             work: unsafe { Owned::new(work) },
             work_context,
-            waker: tx,
+            waker: clock,
         }
     }
 }
 
 impl Widget for &mut HeapsWidget {
     fn ui(self, ui: &mut eframe::egui::Ui) -> eframe::egui::Response {
-        let _ = self.waker.send(());
         ui.scope(|ui| {
             for entry in self.work_context.heaps.read().iter() {
-                Grid::new(entry.heap_id).show(ui, |ui| {
+                ui.scope(|ui| {
                     ui.label(format!("ID: {:#x}", entry.heap_id));
                     ui.label(format!("Address: {:#x}", entry.address));
-                    ui.end_row();
                     ui.label(format!("Block size: {}", entry.block_size));
-                    ui.end_row();
                     match entry.flags {
                         LF32_FIXED => {
                             ui.label(
